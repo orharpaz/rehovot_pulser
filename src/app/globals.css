@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    direction: rtl;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
