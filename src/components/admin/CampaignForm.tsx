@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { CampaignFormData, CampaignFormErrors, Recipient } from '@/types/campaign'
 
 interface Props {
@@ -22,6 +22,9 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
   const [allRecipients, setAllRecipients] = useState<Recipient[]>([])
   const [errors, setErrors] = useState<CampaignFormErrors>({})
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch('/api/admin/recipients')
@@ -40,6 +43,23 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
         ? prev.recipientIds.filter((r) => r !== id)
         : [...prev.recipientIds, id],
     }))
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadError('')
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+    const json = await res.json()
+    setUploading(false)
+    if (!res.ok) {
+      setUploadError(json.error ?? 'שגיאה בהעלאה')
+    } else {
+      setData((prev) => ({ ...prev, imageUrl: json.url }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,16 +169,43 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
       </div>
 
       <div>
-        <label className={label}>קישור לתמונה (אופציונלי)</label>
+        <label className={label}>תמונה לקמפיין (אופציונלי)</label>
         <input
-          type="url"
-          value={data.imageUrl}
-          onChange={set('imageUrl')}
-          className={input(!!errors.imageUrl)}
-          placeholder="https://..."
-          dir="ltr"
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageUpload}
         />
-        {errors.imageUrl && <p className={errText}>{errors.imageUrl}</p>}
+        {data.imageUrl ? (
+          <div className="relative inline-block">
+            <img
+              src={data.imageUrl}
+              alt=""
+              className="w-full max-h-40 object-cover rounded-sm border-2 border-gray-300"
+            />
+            <button
+              type="button"
+              onClick={() => setData((prev) => ({ ...prev, imageUrl: '' }))}
+              className="absolute top-1 left-1 bg-brand-black text-white text-xs font-bold px-2 py-1 rounded-sm hover:opacity-80"
+            >
+              הסר
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="border-2 border-dashed border-gray-300 rounded-sm px-6 py-4 w-full text-sm text-gray-500 hover:border-brand-black hover:text-brand-black transition-colors disabled:opacity-60"
+          >
+            {uploading ? 'מעלה תמונה...' : '+ בחרו תמונה (עד 5MB)'}
+          </button>
+        )}
+        {uploadError && <p className={errText}>{uploadError}</p>}
+        {uploading && (
+          <p className="text-gray-500 text-xs mt-1">מעלה תמונה...</p>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
