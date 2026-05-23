@@ -8,7 +8,10 @@ import type { CampaignWithUrl } from '@/types/campaign'
 export default async function CampaignsPage() {
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { recipients: { include: { recipient: true } } },
+    include: {
+      recipients: { include: { recipient: true } },
+      messages: { orderBy: { sortOrder: 'asc' } },
+    },
   })
 
   const campaignsWithUrl: CampaignWithUrl[] = campaigns.map((c) => ({
@@ -17,6 +20,7 @@ export default async function CampaignsPage() {
     updatedAt: c.updatedAt.toISOString(),
     publicUrl: `/campaign/${c.slug}`,
     recipients: c.recipients.map((r) => ({ ...r.recipient, createdAt: r.recipient.createdAt.toISOString() })),
+    messages: c.messages.map((m) => ({ id: m.id, body: m.body, sortOrder: m.sortOrder })),
   }))
 
   return (
