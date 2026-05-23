@@ -1,9 +1,17 @@
+export interface Recipient {
+  id: number
+  fullName: string
+  jobTitle: string
+  phone: string
+  createdAt: string
+}
+
 export interface Campaign {
   id: number
   slug: string
   title: string
   description: string
-  targetPhone: string
+  targetPhone: string | null
   messageText: string
   ctaText: string
   imageUrl: string | null
@@ -15,6 +23,7 @@ export interface Campaign {
 
 export interface CampaignWithUrl extends Campaign {
   publicUrl: string
+  recipients: Recipient[]
 }
 
 export interface ClickEvent {
@@ -29,11 +38,11 @@ export interface ClickEvent {
 export interface CampaignFormData {
   title: string
   description: string
-  targetPhone: string
   messageText: string
   ctaText: string
   imageUrl: string
   isActive: boolean
+  recipientIds: number[]
 }
 
 export type CampaignFormErrors = Partial<Record<keyof CampaignFormData, string>>

@@ -63,11 +63,11 @@ export default function EditCampaignPage() {
           initialData={{
             title: campaign.title,
             description: campaign.description,
-            targetPhone: campaign.targetPhone,
             messageText: campaign.messageText,
             ctaText: campaign.ctaText,
             imageUrl: campaign.imageUrl ?? '',
             isActive: campaign.isActive,
+            recipientIds: campaign.recipients.map((r) => r.id),
           }}
           onSubmit={handleSubmit}
           submitLabel="שמירת שינויים"

@@ -13,11 +13,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-brand-black text-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src="/alarm-clock.svg" alt="" aria-hidden="true" className="w-8 h-8" />
-          <span className="font-black text-lg">רחובות מתעוררת</span>
-          <span className="text-brand-red mx-1" aria-hidden="true">◆</span>
-          <span className="font-medium text-sm opacity-70">ניהול קמפיינים</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <img src="/alarm-clock.svg" alt="" aria-hidden="true" className="w-8 h-8" />
+            <span className="font-black text-lg">רחובות מתעוררת</span>
+          </div>
+          <nav className="flex items-center gap-1 text-sm">
+            <a href="/admin/campaigns" className="px-3 py-1 rounded-sm hover:bg-white/10 font-medium">קמפיינים</a>
+            <span className="text-brand-red" aria-hidden="true">◆</span>
+            <a href="/admin/recipients" className="px-3 py-1 rounded-sm hover:bg-white/10 font-medium">נמענים</a>
+          </nav>
         </div>
         <button
           onClick={handleLogout}

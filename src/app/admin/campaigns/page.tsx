@@ -4,13 +4,17 @@ import CampaignTable from '@/components/admin/CampaignTable'
 import type { CampaignWithUrl } from '@/types/campaign'
 
 export default async function CampaignsPage() {
-  const campaigns = await prisma.campaign.findMany({ orderBy: { createdAt: 'desc' } })
+  const campaigns = await prisma.campaign.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: { recipients: { include: { recipient: true } } },
+  })
 
   const campaignsWithUrl: CampaignWithUrl[] = campaigns.map((c) => ({
     ...c,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
     publicUrl: `/campaign/${c.slug}`,
+    recipients: c.recipients.map((r) => ({ ...r.recipient, createdAt: r.recipient.createdAt.toISOString() })),
   }))
 
   return (

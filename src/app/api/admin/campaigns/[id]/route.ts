@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { validateCampaign } from '@/lib/validation'
-import { normalizePhone } from '@/lib/whatsapp'
 import { isValidSessionToken } from '@/lib/auth'
 
 function checkAuth(request: NextRequest): boolean {
   const session = request.cookies.get('admin_session')
   return session?.value ? isValidSessionToken(session.value) : false
+}
+
+function serializeCampaign(c: {
+  id: number; slug: string; title: string; description: string
+  targetPhone: string | null; messageText: string; ctaText: string
+  imageUrl: string | null; clicksCount: number; isActive: boolean
+  createdAt: Date; updatedAt: Date
+  recipients: { recipient: { id: number; fullName: string; jobTitle: string; phone: string; createdAt: Date } }[]
+}) {
+  return {
+    ...c,
+    createdAt: c.createdAt.toISOString(),
+    updatedAt: c.updatedAt.toISOString(),
+    publicUrl: `/campaign/${c.slug}`,
+    recipients: c.recipients.map((r) => ({
+      ...r.recipient,
+      createdAt: r.recipient.createdAt.toISOString(),
+    })),
+  }
 }
 
 export async function GET(
@@ -17,20 +35,16 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const campaign = await prisma.campaign.findUnique({ where: { id: parseInt(params.id) } })
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: parseInt(params.id) },
+    include: { recipients: { include: { recipient: true } } },
+  })
 
   if (!campaign) {
     return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
   }
 
-  return NextResponse.json({
-    campaign: {
-      ...campaign,
-      createdAt: campaign.createdAt.toISOString(),
-      updatedAt: campaign.updatedAt.toISOString(),
-      publicUrl: `/campaign/${campaign.slug}`,
-    },
-  })
+  return NextResponse.json({ campaign: serializeCampaign(campaign) })
 }
 
 export async function PATCH(
@@ -41,7 +55,8 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const campaign = await prisma.campaign.findUnique({ where: { id: parseInt(params.id) } })
+  const id = parseInt(params.id)
+  const campaign = await prisma.campaign.findUnique({ where: { id } })
 
   if (!campaign) {
     return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
@@ -54,25 +69,26 @@ export async function PATCH(
     return NextResponse.json({ error: 'Validation failed', fields: errors }, { status: 400 })
   }
 
+  const recipientIds: number[] | undefined = body.recipientIds
+
   const updated = await prisma.campaign.update({
-    where: { id: campaign.id },
+    where: { id },
     data: {
       ...(body.title !== undefined && { title: body.title }),
       ...(body.description !== undefined && { description: body.description }),
-      ...(body.targetPhone !== undefined && { targetPhone: normalizePhone(body.targetPhone) }),
       ...(body.messageText !== undefined && { messageText: body.messageText }),
       ...(body.ctaText !== undefined && { ctaText: body.ctaText }),
       ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl || null }),
       ...(body.isActive !== undefined && { isActive: body.isActive }),
+      ...(recipientIds !== undefined && {
+        recipients: {
+          deleteMany: {},
+          create: recipientIds.map((rid) => ({ recipientId: rid })),
+        },
+      }),
     },
+    include: { recipients: { include: { recipient: true } } },
   })
 
-  return NextResponse.json({
-    campaign: {
-      ...updated,
-      createdAt: updated.createdAt.toISOString(),
-      updatedAt: updated.updatedAt.toISOString(),
-      publicUrl: `/campaign/${updated.slug}`,
-    },
-  })
+  return NextResponse.json({ campaign: serializeCampaign(updated) })
 }

@@ -8,27 +8,47 @@ generator client {
 }
 
 model Campaign {
-  id          Int          @id @default(autoincrement())
-  slug        String       @unique
+  id          Int                 @id @default(autoincrement())
+  slug        String              @unique
   title       String
   description String
-  targetPhone String
+  targetPhone String?
   messageText String
-  ctaText     String       @default("שלחו הודעה עכשיו")
+  ctaText     String              @default("שלחו הודעה עכשיו")
   imageUrl    String?
-  clicksCount Int          @default(0)
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  clicksCount Int                 @default(0)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
   clicks      ClickEvent[]
+  recipients  CampaignRecipient[]
+}
+
+model Recipient {
+  id        Int                 @id @default(autoincrement())
+  fullName  String
+  jobTitle  String
+  phone     String
+  createdAt DateTime            @default(now())
+  campaigns CampaignRecipient[]
+}
+
+model CampaignRecipient {
+  campaignId  Int
+  recipientId Int
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipient   Recipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, recipientId])
 }
 
 model ClickEvent {
-  id         Int      @id @default(autoincrement())
-  campaignId Int
-  createdAt  DateTime @default(now())
-  userAgent  String?
-  ipHash     String?
-  referrer   String?
-  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  campaignId  Int
+  recipientId Int?
+  createdAt   DateTime @default(now())
+  userAgent   String?
+  ipHash      String?
+  referrer    String?
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }

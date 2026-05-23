@@ -1,9 +1,6 @@
-import { isValidPhone } from './whatsapp'
-
 interface CampaignInput {
   title?: string
   description?: string
-  targetPhone?: string
   messageText?: string
   ctaText?: string
   imageUrl?: string
@@ -23,11 +20,6 @@ export function validateCampaign(
   if (!partial || data.description !== undefined) {
     if (!data.description?.trim()) errors.description = 'תיאור הקמפיין נדרש'
     else if (data.description.length > 5000) errors.description = 'התיאור ארוך מדי'
-  }
-
-  if (!partial || data.targetPhone !== undefined) {
-    if (!data.targetPhone?.trim()) errors.targetPhone = 'מספר הטלפון נדרש'
-    else if (!isValidPhone(data.targetPhone)) errors.targetPhone = 'מספר הטלפון אינו תקין'
   }
 
   if (!partial || data.messageText !== undefined) {

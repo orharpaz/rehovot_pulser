@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import type { CampaignFormData, CampaignFormErrors } from '@/types/campaign'
+import { useState, useEffect } from 'react'
+import type { CampaignFormData, CampaignFormErrors, Recipient } from '@/types/campaign'
 
 interface Props {
   initialData?: Partial<CampaignFormData>
@@ -13,18 +13,34 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
   const [data, setData] = useState<CampaignFormData>({
     title: initialData?.title ?? '',
     description: initialData?.description ?? '',
-    targetPhone: initialData?.targetPhone ?? '',
     messageText: initialData?.messageText ?? '',
     ctaText: initialData?.ctaText ?? 'שלחו הודעה עכשיו',
     imageUrl: initialData?.imageUrl ?? '',
     isActive: initialData?.isActive ?? true,
+    recipientIds: initialData?.recipientIds ?? [],
   })
+  const [allRecipients, setAllRecipients] = useState<Recipient[]>([])
   const [errors, setErrors] = useState<CampaignFormErrors>({})
   const [loading, setLoading] = useState(false)
 
-  const set = (field: keyof CampaignFormData) =>
+  useEffect(() => {
+    fetch('/api/admin/recipients')
+      .then((r) => r.json())
+      .then((d) => setAllRecipients(d.recipients ?? []))
+  }, [])
+
+  const set = (field: keyof Omit<CampaignFormData, 'recipientIds' | 'isActive'>) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setData((prev) => ({ ...prev, [field]: e.target.value }))
+
+  const toggleRecipient = (id: number) => {
+    setData((prev) => ({
+      ...prev,
+      recipientIds: prev.recipientIds.includes(id)
+        ? prev.recipientIds.filter((r) => r !== id)
+        : [...prev.recipientIds, id],
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,21 +90,6 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
       </div>
 
       <div>
-        <label className={label}>מספר וואטסאפ יעד *</label>
-        <input
-          type="tel"
-          value={data.targetPhone}
-          onChange={set('targetPhone')}
-          className={input(!!errors.targetPhone)}
-          placeholder="+972501234567"
-          required
-          dir="ltr"
-        />
-        {errors.targetPhone && <p className={errText}>{errors.targetPhone}</p>}
-        <p className="text-gray-500 text-xs mt-1">הכניסו מספר בפורמט בינלאומי, לדוגמה: +972501234567</p>
-      </div>
-
-      <div>
         <label className={label}>נוסח ההודעה *</label>
         <textarea
           value={data.messageText}
@@ -100,6 +101,40 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
         />
         {errors.messageText && <p className={errText}>{errors.messageText}</p>}
         <p className="text-gray-500 text-xs mt-1">{data.messageText.length}/2000 תווים</p>
+      </div>
+
+      {/* Recipients */}
+      <div>
+        <label className={label}>נמענים לקמפיין</label>
+        {allRecipients.length === 0 ? (
+          <p className="text-gray-400 text-sm py-2">
+            אין נמענים עדיין —{' '}
+            <a href="/admin/recipients" className="underline text-brand-black">
+              הוסיפו נמענים תחילה
+            </a>
+          </p>
+        ) : (
+          <div className="border-2 border-gray-300 rounded-sm divide-y divide-gray-100 max-h-56 overflow-y-auto">
+            {allRecipients.map((r) => (
+              <label
+                key={r.id}
+                className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={data.recipientIds.includes(r.id)}
+                  onChange={() => toggleRecipient(r.id)}
+                  className="w-4 h-4 accent-brand-red"
+                />
+                <span className="font-medium text-brand-black text-sm">{r.fullName}</span>
+                <span className="text-gray-500 text-sm">— {r.jobTitle}</span>
+              </label>
+            ))}
+          </div>
+        )}
+        {data.recipientIds.length > 0 && (
+          <p className="text-gray-500 text-xs mt-1">{data.recipientIds.length} נמענים נבחרו</p>
+        )}
       </div>
 
       <div>
