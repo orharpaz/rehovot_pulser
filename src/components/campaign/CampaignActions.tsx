@@ -179,7 +179,7 @@ export default function CampaignActions({
         </div>
       ) : null}
 
-      <WhatsAppCTA ctaText={ctaText} isActive={canSend} onAction={handleAction} />
+      <WhatsAppCTA ctaText={ctaText} campaignActive={isActive} canSend={canSend} onAction={handleAction} />
     </div>
   )
 }
