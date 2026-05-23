@@ -50,15 +50,20 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
     if (!file) return
     setUploading(true)
     setUploadError('')
-    const form = new FormData()
-    form.append('file', file)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
-    const json = await res.json()
-    setUploading(false)
-    if (!res.ok) {
-      setUploadError(json.error ?? 'שגיאה בהעלאה')
-    } else {
-      setData((prev) => ({ ...prev, imageUrl: json.url }))
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+      const json = await res.json()
+      if (!res.ok) {
+        setUploadError(json.error ?? 'שגיאה בהעלאה')
+      } else {
+        setData((prev) => ({ ...prev, imageUrl: json.url }))
+      }
+    } catch {
+      setUploadError('שגיאה בהעלאה — נסו שנית')
+    } finally {
+      setUploading(false)
     }
   }
 
