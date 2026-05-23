@@ -28,7 +28,7 @@ export default function CampaignHero({ title, description, imageUrl }: Props) {
         <span className="text-brand-red text-base" aria-hidden="true">◆</span>
       </div>
 
-      <p className="text-brand-black font-medium text-lg leading-relaxed">{description}</p>
+      <p className="text-brand-black font-medium text-lg leading-relaxed whitespace-pre-wrap">{description}</p>
     </div>
   )
 }
