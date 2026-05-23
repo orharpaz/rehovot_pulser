@@ -60,8 +60,8 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
       } else {
         setData((prev) => ({ ...prev, imageUrl: json.url }))
       }
-    } catch {
-      setUploadError('שגיאה בהעלאה — נסו שנית')
+    } catch (err) {
+      setUploadError('שגיאה בהעלאה — ' + (err instanceof Error ? err.message : 'נסו שנית'))
     } finally {
       setUploading(false)
     }

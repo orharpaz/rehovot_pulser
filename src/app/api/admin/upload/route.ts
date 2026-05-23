@@ -27,7 +27,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'ניתן להעלות תמונות בלבד' }, { status: 400 })
   }
 
-  const blob = await put(`campaigns/${Date.now()}-${file.name}`, file, { access: 'public' })
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return NextResponse.json({ error: 'BLOB_READ_WRITE_TOKEN לא מוגדר בסביבה' }, { status: 500 })
+  }
 
-  return NextResponse.json({ url: blob.url })
+  try {
+    const blob = await put(`campaigns/${Date.now()}-${file.name}`, file, { access: 'public' })
+    return NextResponse.json({ url: blob.url })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: `שגיאת Blob: ${message}` }, { status: 500 })
+  }
 }
