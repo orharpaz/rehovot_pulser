@@ -1,7 +1,7 @@
 interface CampaignInput {
   title?: string
   description?: string
-  messageText?: string
+  messageTexts?: string[]
   ctaText?: string
   imageUrl?: string
 }
@@ -22,9 +22,15 @@ export function validateCampaign(
     else if (data.description.length > 5000) errors.description = 'התיאור ארוך מדי'
   }
 
-  if (!partial || data.messageText !== undefined) {
-    if (!data.messageText?.trim()) errors.messageText = 'נוסח ההודעה נדרש'
-    else if (data.messageText.length > 2000) errors.messageText = 'ההודעה ארוכה מדי (מקסימום 2000 תווים)'
+  if (!partial || data.messageTexts !== undefined) {
+    if (!data.messageTexts || data.messageTexts.length === 0) {
+      errors.messageTexts = 'נדרש לפחות נוסח הודעה אחד'
+    } else {
+      const allEmpty = data.messageTexts.every((m) => !m.trim())
+      if (allEmpty) errors.messageTexts = 'נדרש לפחות נוסח הודעה אחד'
+      const tooLong = data.messageTexts.find((m) => m.length > 2000)
+      if (tooLong) errors.messageTexts = 'הודעה ארוכה מדי (מקסימום 2000 תווים)'
+    }
   }
 
   if (data.imageUrl) {

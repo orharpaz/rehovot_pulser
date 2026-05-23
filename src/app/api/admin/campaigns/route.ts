@@ -11,10 +11,11 @@ function checkAuth(request: NextRequest): boolean {
 
 function serializeCampaign(c: {
   id: number; slug: string; title: string; description: string
-  targetPhone: string | null; messageText: string; ctaText: string
+  targetPhone: string | null; messageText: string | null; ctaText: string
   imageUrl: string | null; clicksCount: number; isActive: boolean
   createdAt: Date; updatedAt: Date
   recipients?: { recipient: { id: number; fullName: string; jobTitle: string; phone: string; createdAt: Date } }[]
+  messages?: { id: number; body: string; sortOrder: number }[]
 }) {
   return {
     ...c,
@@ -25,6 +26,7 @@ function serializeCampaign(c: {
       ...r.recipient,
       createdAt: r.recipient.createdAt.toISOString(),
     })),
+    messages: (c.messages ?? []).map((m) => ({ id: m.id, body: m.body, sortOrder: m.sortOrder })),
   }
 }
 
@@ -35,7 +37,10 @@ export async function GET(request: NextRequest) {
 
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: 'desc' },
-    include: { recipients: { include: { recipient: true } } },
+    include: {
+      recipients: { include: { recipient: true } },
+      messages: { orderBy: { sortOrder: 'asc' } },
+    },
   })
 
   return NextResponse.json({ campaigns: campaigns.map(serializeCampaign) })
@@ -55,21 +60,27 @@ export async function POST(request: NextRequest) {
 
   const slug = body.slug || (await generateUniqueSlug())
   const recipientIds: number[] = body.recipientIds ?? []
+  const messageTexts: string[] = body.messageTexts ?? []
 
   const campaign = await prisma.campaign.create({
     data: {
       slug,
       title: body.title,
       description: body.description,
-      messageText: body.messageText,
       ctaText: body.ctaText || 'שלחו הודעה עכשיו',
       imageUrl: body.imageUrl || null,
       isActive: body.isActive ?? true,
       recipients: {
         create: recipientIds.map((id) => ({ recipientId: id })),
       },
+      messages: {
+        create: messageTexts.map((body, i) => ({ body, sortOrder: i })),
+      },
     },
-    include: { recipients: { include: { recipient: true } } },
+    include: {
+      recipients: { include: { recipient: true } },
+      messages: { orderBy: { sortOrder: 'asc' } },
+    },
   })
 
   return NextResponse.json({ campaign: serializeCampaign(campaign) }, { status: 201 })

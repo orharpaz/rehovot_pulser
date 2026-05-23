@@ -43,15 +43,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CampaignPage({ params }: Props) {
   const campaign = await prisma.campaign.findUnique({
     where: { slug: params.slug },
-    include: { recipients: { include: { recipient: true } } },
+    include: {
+      recipients: { include: { recipient: true } },
+      messages: { orderBy: { sortOrder: 'asc' } },
+    },
   })
 
   if (!campaign) notFound()
 
   const recipients = campaign.recipients.map((r) => r.recipient)
-  const whatsappLink = campaign.targetPhone
-    ? buildWhatsAppLink(campaign.targetPhone, campaign.messageText)
-    : ''
+
+  // Prefer CampaignMessage rows; fall back to legacy messageText for old campaigns
+  const messages = campaign.messages.length
+    ? campaign.messages.map((m) => m.body)
+    : campaign.messageText
+    ? [campaign.messageText]
+    : []
+
+  const whatsappLink =
+    campaign.targetPhone && messages.length
+      ? buildWhatsAppLink(campaign.targetPhone, messages[0])
+      : ''
 
   return (
     <main className="min-h-screen bg-brand-yellow flex flex-col">
@@ -70,7 +82,7 @@ export default async function CampaignPage({ params }: Props) {
             isActive={campaign.isActive}
             initialCount={campaign.clicksCount}
             recipients={recipients}
-            messageText={campaign.messageText}
+            messages={messages}
           />
 
           {campaign.isActive && (

@@ -13,7 +13,7 @@ model Campaign {
   title       String
   description String
   targetPhone String?
-  messageText String
+  messageText String?
   ctaText     String              @default("שלחו הודעה עכשיו")
   imageUrl    String?
   clicksCount Int                 @default(0)
@@ -22,6 +22,16 @@ model Campaign {
   updatedAt   DateTime            @updatedAt
   clicks      ClickEvent[]
   recipients  CampaignRecipient[]
+  messages    CampaignMessage[]
+}
+
+model CampaignMessage {
+  id         Int      @id @default(autoincrement())
+  campaignId Int
+  body       String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
 model Recipient {

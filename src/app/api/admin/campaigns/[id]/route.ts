@@ -10,10 +10,11 @@ function checkAuth(request: NextRequest): boolean {
 
 function serializeCampaign(c: {
   id: number; slug: string; title: string; description: string
-  targetPhone: string | null; messageText: string; ctaText: string
+  targetPhone: string | null; messageText: string | null; ctaText: string
   imageUrl: string | null; clicksCount: number; isActive: boolean
   createdAt: Date; updatedAt: Date
   recipients: { recipient: { id: number; fullName: string; jobTitle: string; phone: string; createdAt: Date } }[]
+  messages: { id: number; body: string; sortOrder: number }[]
 }) {
   return {
     ...c,
@@ -24,6 +25,7 @@ function serializeCampaign(c: {
       ...r.recipient,
       createdAt: r.recipient.createdAt.toISOString(),
     })),
+    messages: c.messages.map((m) => ({ id: m.id, body: m.body, sortOrder: m.sortOrder })),
   }
 }
 
@@ -37,7 +39,10 @@ export async function GET(
 
   const campaign = await prisma.campaign.findUnique({
     where: { id: parseInt(params.id) },
-    include: { recipients: { include: { recipient: true } } },
+    include: {
+      recipients: { include: { recipient: true } },
+      messages: { orderBy: { sortOrder: 'asc' } },
+    },
   })
 
   if (!campaign) {
@@ -63,20 +68,20 @@ export async function PATCH(
   }
 
   const body = await request.json()
-  const errors = validateCampaign({ ...campaign, ...body }, true)
+  const errors = validateCampaign(body, true)
 
   if (Object.keys(errors).length > 0) {
     return NextResponse.json({ error: 'Validation failed', fields: errors }, { status: 400 })
   }
 
   const recipientIds: number[] | undefined = body.recipientIds
+  const messageTexts: string[] | undefined = body.messageTexts
 
   const updated = await prisma.campaign.update({
     where: { id },
     data: {
       ...(body.title !== undefined && { title: body.title }),
       ...(body.description !== undefined && { description: body.description }),
-      ...(body.messageText !== undefined && { messageText: body.messageText }),
       ...(body.ctaText !== undefined && { ctaText: body.ctaText }),
       ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl || null }),
       ...(body.isActive !== undefined && { isActive: body.isActive }),
@@ -86,8 +91,17 @@ export async function PATCH(
           create: recipientIds.map((rid) => ({ recipientId: rid })),
         },
       }),
+      ...(messageTexts !== undefined && {
+        messages: {
+          deleteMany: {},
+          create: messageTexts.map((body, i) => ({ body, sortOrder: i })),
+        },
+      }),
     },
-    include: { recipients: { include: { recipient: true } } },
+    include: {
+      recipients: { include: { recipient: true } },
+      messages: { orderBy: { sortOrder: 'asc' } },
+    },
   })
 
   return NextResponse.json({ campaign: serializeCampaign(updated) })

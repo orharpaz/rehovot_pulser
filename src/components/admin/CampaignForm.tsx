@@ -13,7 +13,7 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
   const [data, setData] = useState<CampaignFormData>({
     title: initialData?.title ?? '',
     description: initialData?.description ?? '',
-    messageText: initialData?.messageText ?? '',
+    messageTexts: initialData?.messageTexts?.length ? initialData.messageTexts : [''],
     ctaText: initialData?.ctaText ?? 'שלחו הודעה עכשיו',
     imageUrl: initialData?.imageUrl ?? '',
     isActive: initialData?.isActive ?? true,
@@ -32,9 +32,28 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
       .then((d) => setAllRecipients(d.recipients ?? []))
   }, [])
 
-  const set = (field: keyof Omit<CampaignFormData, 'recipientIds' | 'isActive'>) =>
+  const set = (field: keyof Omit<CampaignFormData, 'recipientIds' | 'isActive' | 'messageTexts'>) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setData((prev) => ({ ...prev, [field]: e.target.value }))
+
+  const setMessage = (index: number, value: string) => {
+    setData((prev) => {
+      const updated = [...prev.messageTexts]
+      updated[index] = value
+      return { ...prev, messageTexts: updated }
+    })
+  }
+
+  const addMessage = () => {
+    setData((prev) => ({ ...prev, messageTexts: [...prev.messageTexts, ''] }))
+  }
+
+  const removeMessage = (index: number) => {
+    setData((prev) => ({
+      ...prev,
+      messageTexts: prev.messageTexts.filter((_, i) => i !== index),
+    }))
+  }
 
   const toggleRecipient = (id: number) => {
     setData((prev) => ({
@@ -115,17 +134,41 @@ export default function CampaignForm({ initialData, onSubmit, submitLabel }: Pro
       </div>
 
       <div>
-        <label className={label}>נוסח ההודעה *</label>
-        <textarea
-          value={data.messageText}
-          onChange={set('messageText')}
-          className={input(!!errors.messageText)}
-          rows={6}
-          maxLength={2000}
-          required
-        />
-        {errors.messageText && <p className={errText}>{errors.messageText}</p>}
-        <p className="text-gray-500 text-xs mt-1">{data.messageText.length}/2000 תווים</p>
+        <label className={label}>נוסחי הודעה *</label>
+        {data.messageTexts.map((msg, i) => (
+          <div key={i} className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500 font-medium">נוסח {i + 1}</span>
+              {data.messageTexts.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeMessage(i)}
+                  className="text-xs text-brand-red hover:underline font-medium"
+                >
+                  ✕ הסר
+                </button>
+              )}
+            </div>
+            <textarea
+              value={msg}
+              onChange={(e) => setMessage(i, e.target.value)}
+              className={input(i === 0 && !!errors.messageTexts)}
+              rows={5}
+              maxLength={2000}
+              required={i === 0}
+              placeholder={i === 0 ? 'נוסח ברירת המחדל...' : 'נוסח חלופי...'}
+            />
+            <p className="text-gray-400 text-xs mt-0.5 text-left">{msg.length}/2000</p>
+          </div>
+        ))}
+        {errors.messageTexts && <p className={errText}>{errors.messageTexts}</p>}
+        <button
+          type="button"
+          onClick={addMessage}
+          className="mt-1 text-sm font-bold text-brand-black border-2 border-dashed border-gray-300 rounded-sm px-4 py-2 w-full hover:border-brand-black transition-colors"
+        >
+          + הוספת נוסח נוסף
+        </button>
       </div>
 
       {/* Recipients */}

@@ -1,3 +1,9 @@
+export interface CampaignMessage {
+  id: number
+  body: string
+  sortOrder: number
+}
+
 export interface Recipient {
   id: number
   fullName: string
@@ -12,7 +18,7 @@ export interface Campaign {
   title: string
   description: string
   targetPhone: string | null
-  messageText: string
+  messageText: string | null
   ctaText: string
   imageUrl: string | null
   clicksCount: number
@@ -24,6 +30,7 @@ export interface Campaign {
 export interface CampaignWithUrl extends Campaign {
   publicUrl: string
   recipients: Recipient[]
+  messages: CampaignMessage[]
 }
 
 export interface ClickEvent {
@@ -38,7 +45,7 @@ export interface ClickEvent {
 export interface CampaignFormData {
   title: string
   description: string
-  messageText: string
+  messageTexts: string[]
   ctaText: string
   imageUrl: string
   isActive: boolean

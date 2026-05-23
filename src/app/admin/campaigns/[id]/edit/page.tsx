@@ -63,7 +63,11 @@ export default function EditCampaignPage() {
           initialData={{
             title: campaign.title,
             description: campaign.description,
-            messageText: campaign.messageText,
+            messageTexts: campaign.messages.length
+              ? campaign.messages.map((m) => m.body)
+              : campaign.messageText
+              ? [campaign.messageText]
+              : [''],
             ctaText: campaign.ctaText,
             imageUrl: campaign.imageUrl ?? '',
             isActive: campaign.isActive,

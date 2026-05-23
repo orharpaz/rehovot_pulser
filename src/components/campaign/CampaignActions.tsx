@@ -19,7 +19,7 @@ interface Props {
   isActive: boolean
   initialCount: number
   recipients: Recipient[]
-  messageText: string
+  messages: string[]
 }
 
 export default function CampaignActions({
@@ -29,13 +29,15 @@ export default function CampaignActions({
   isActive,
   initialCount,
   recipients,
-  messageText,
+  messages,
 }: Props) {
   const [count, setCount] = useState(initialCount)
   const [selectedId, setSelectedId] = useState<number | null>(
     recipients.length === 1 ? recipients[0].id : null
   )
   const [open, setOpen] = useState(false)
+  const [selectedMessageIndex, setSelectedMessageIndex] = useState(0)
+  const [messagesExpanded, setMessagesExpanded] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -53,11 +55,20 @@ export default function CampaignActions({
     ? recipients.find((r) => r.id === selectedId) ?? null
     : null
 
+  const activeMessage = messages[selectedMessageIndex] ?? messages[0] ?? ''
+
+  // For recipient-based campaigns, build link from selected recipient's phone + active message
+  // For targetPhone campaigns, rebuild link with active message
   const resolvedLink = hasRecipients
     ? selectedRecipient
-      ? buildWhatsAppLink(selectedRecipient.phone, messageText)
+      ? buildWhatsAppLink(selectedRecipient.phone, activeMessage)
       : ''
-    : whatsappLink
+    : (() => {
+        const match = whatsappLink.match(/wa\.me\/([^?]+)/)
+        return match && activeMessage
+          ? buildWhatsAppLink(match[1], activeMessage)
+          : whatsappLink
+      })()
 
   const canSend = isActive && (hasRecipients ? !!selectedRecipient : !!resolvedLink)
 
@@ -68,10 +79,13 @@ export default function CampaignActions({
     window.open(resolvedLink, '_blank')
   }
 
+  const hasMultipleMessages = messages.length > 1
+
   return (
     <div className="w-full space-y-4">
       <ClickCounter count={count} />
 
+      {/* Recipient dropdown */}
       {hasRecipients && recipients.length > 1 && (
         <div ref={dropdownRef} className="relative">
           <label className="block text-brand-black font-bold text-sm mb-2">
@@ -108,6 +122,62 @@ export default function CampaignActions({
           )}
         </div>
       )}
+
+      {/* Message selector */}
+      {hasMultipleMessages ? (
+        <div>
+          <label className="block text-brand-black font-bold text-sm mb-2">
+            בחרו נוסח הודעה:
+          </label>
+
+          {messagesExpanded ? (
+            <div className="space-y-2">
+              {messages.map((msg, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => { setSelectedMessageIndex(i); setMessagesExpanded(false) }}
+                  className={`w-full text-right px-4 py-3 rounded-sm border-2 transition-colors ${
+                    selectedMessageIndex === i
+                      ? 'border-brand-black bg-brand-yellow'
+                      : 'border-gray-300 bg-white hover:border-brand-black'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className={`mt-1 shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      selectedMessageIndex === i ? 'border-brand-black bg-brand-black' : 'border-gray-400'
+                    }`}>
+                      {selectedMessageIndex === i && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white block" />
+                      )}
+                    </span>
+                    <span className="text-sm text-brand-black whitespace-pre-wrap text-right leading-relaxed">
+                      {msg}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <div className="w-full text-right px-4 py-3 rounded-sm border-2 border-brand-black bg-brand-yellow text-sm text-brand-black whitespace-pre-wrap leading-relaxed">
+                {messages[selectedMessageIndex]}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMessagesExpanded(true)}
+                className="mt-2 text-sm font-bold text-brand-black underline"
+              >
+                + נוסחים נוספים
+              </button>
+            </div>
+          )}
+        </div>
+      ) : messages.length === 1 ? (
+        <div className="w-full text-right px-4 py-3 rounded-sm border-2 border-gray-200 bg-white text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+          {messages[0]}
+        </div>
+      ) : null}
 
       <WhatsAppCTA ctaText={ctaText} isActive={canSend} onAction={handleAction} />
     </div>
