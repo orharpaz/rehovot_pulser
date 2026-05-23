@@ -13,10 +13,24 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const campaign = await prisma.campaign.findUnique({ where: { slug: params.slug } })
   if (!campaign) return { title: 'קמפיין לא נמצא' }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const pageUrl = `${baseUrl}/campaign/${campaign.slug}`
+
   return {
     title: campaign.title,
     description: campaign.description,
     openGraph: {
+      title: campaign.title,
+      description: campaign.description,
+      url: pageUrl,
+      siteName: 'רחובות מתעוררת',
+      type: 'website',
+      locale: 'he_IL',
+      ...(campaign.imageUrl ? { images: [{ url: campaign.imageUrl }] } : {}),
+    },
+    twitter: {
+      card: campaign.imageUrl ? 'summary_large_image' : 'summary',
       title: campaign.title,
       description: campaign.description,
       ...(campaign.imageUrl ? { images: [campaign.imageUrl] } : {}),
