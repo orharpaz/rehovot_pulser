@@ -14,7 +14,7 @@ export default function CampaignHero({ title, description, imageUrl }: Props) {
         <img
           src={imageUrl}
           alt=""
-          className="w-full max-h-48 object-cover mb-6 rounded-sm"
+          className="w-full h-auto mb-6 rounded-sm"
         />
       )}
 
