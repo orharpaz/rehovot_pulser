@@ -14,16 +14,21 @@ export default function AdminLoginPage() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    })
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
 
-    if (res.ok) {
-      router.push('/admin/campaigns')
-    } else {
-      setError('סיסמה שגויה')
+      if (res.ok) {
+        window.location.href = '/admin/campaigns'
+      } else {
+        setError('סיסמה שגויה')
+        setLoading(false)
+      }
+    } catch {
+      setError('שגיאת רשת — נסו שנית')
       setLoading(false)
     }
   }
