@@ -41,6 +41,7 @@ model Recipient {
   phone     String
   createdAt DateTime            @default(now())
   campaigns CampaignRecipient[]
+  clicks    ClickEvent[]
 }
 
 model CampaignRecipient {
@@ -60,5 +61,8 @@ model ClickEvent {
   userAgent   String?
   ipHash      String?
   referrer    String?
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign    Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipient   Recipient? @relation(fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId, recipientId])
 }

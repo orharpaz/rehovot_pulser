@@ -23,6 +23,22 @@ export async function POST(
       'unknown'
     const ipHash = createHash('sha256').update(ip).digest('hex')
 
+    // Optional body: { recipientId } — only kept if the recipient belongs to this campaign
+    let recipientId: number | null = null
+    try {
+      const body = await request.json()
+      if (Number.isInteger(body?.recipientId)) {
+        const link = await prisma.campaignRecipient.findUnique({
+          where: {
+            campaignId_recipientId: { campaignId: campaign.id, recipientId: body.recipientId },
+          },
+        })
+        if (link) recipientId = body.recipientId
+      }
+    } catch {
+      // No or invalid body — record the click without a recipient
+    }
+
     const [updated] = await prisma.$transaction([
       prisma.campaign.update({
         where: { id: campaign.id },
@@ -31,6 +47,7 @@ export async function POST(
       prisma.clickEvent.create({
         data: {
           campaignId: campaign.id,
+          recipientId,
           userAgent: request.headers.get('user-agent'),
           ipHash,
           referrer: request.headers.get('referer'),

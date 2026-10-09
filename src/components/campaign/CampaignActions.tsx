@@ -75,7 +75,11 @@ export default function CampaignActions({
   const handleAction = () => {
     if (!canSend) return
     setCount((c) => c + 1)
-    fetch(`/api/campaigns/${slug}/click`, { method: 'POST' }).catch(() => {})
+    fetch(`/api/campaigns/${slug}/click`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipientId: selectedRecipient?.id ?? null }),
+    }).catch(() => {})
     window.open(resolvedLink, '_blank')
   }
 
