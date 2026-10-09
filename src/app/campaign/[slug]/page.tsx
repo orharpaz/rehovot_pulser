@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import prisma from '@/lib/prisma'
@@ -67,6 +68,12 @@ export default async function CampaignPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-brand-yellow flex flex-col">
+      <div className="px-4 pt-4 max-w-lg mx-auto w-full">
+        <Link href="/" className="text-sm font-bold text-brand-black underline">
+          → לכל הקמפיינים
+        </Link>
+      </div>
+
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 max-w-lg mx-auto w-full">
         <CampaignHero
           title={campaign.title}
