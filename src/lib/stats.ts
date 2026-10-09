@@ -13,7 +13,7 @@ export interface CampaignStat {
   title: string
   isActive: boolean
   total: number
-  // null for targetPhone campaigns (no recipient list)
+  // null when no contact has tracked sends (targetPhone or pre-tracking campaigns)
   perContact: ContactStat[] | null
   // Clicks recorded before per-contact tracking existed
   unattributed: number
@@ -63,9 +63,11 @@ export async function getHomepageStats(): Promise<HomepageStats> {
       return { id: c.id, slug: c.slug, title: c.title, isActive: c.isActive, total: c.clicksCount, perContact: null, unattributed: 0 }
     }
 
+    // Only contacts that actually received messages; campaigns with none show the total alone
     const counts = countsByCampaign.get(c.id)
     const perContact = c.recipients
       .map(({ recipient }) => ({ ...recipient, count: counts?.get(recipient.id) ?? 0 }))
+      .filter((r) => r.count > 0)
       .sort((a, b) => b.count - a.count)
     const attributed = perContact.reduce((sum, r) => sum + r.count, 0)
 
@@ -75,8 +77,8 @@ export async function getHomepageStats(): Promise<HomepageStats> {
       title: c.title,
       isActive: c.isActive,
       total: c.clicksCount,
-      perContact,
-      unattributed: Math.max(0, c.clicksCount - attributed),
+      perContact: perContact.length > 0 ? perContact : null,
+      unattributed: perContact.length > 0 ? Math.max(0, c.clicksCount - attributed) : 0,
     }
   })
 

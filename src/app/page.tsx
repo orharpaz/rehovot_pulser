@@ -1,6 +1,5 @@
 export const dynamic = 'force-dynamic'
 
-import Link from 'next/link'
 import { getHomepageStats } from '@/lib/stats'
 import HomeHero from '@/components/home/HomeHero'
 import StatsStrip from '@/components/home/StatsStrip'
@@ -39,12 +38,6 @@ export default async function Home() {
             </div>
           )}
         </section>
-
-        <div className="text-center">
-          <Link href="/admin/campaigns" className="text-sm font-medium text-brand-black underline">
-            כניסת מנהלים
-          </Link>
-        </div>
       </div>
 
       <CampaignFooter />
